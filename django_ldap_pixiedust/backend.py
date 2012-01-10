@@ -75,12 +75,23 @@ class EmailLoginBackend(LDAPConnectionMixin, LDAPBackend):
 
         search = settings.ldap_settings.LDAP_PIXIEDUST_LOGIN_SEARCH
         results = search.execute(self._get_connection(), {"user": username})
-        if results is not None and len(results) == 1:
+
+        # Process all results and test if they authenticate. We are only expecting a single
+        # user to authenticate. However, several users may be returned from the search if
+        # 'non-enabled' users exist with the same email address.
+        if results:
+            authenticated_users = []
             id_attr = settings.ldap_settings.LDAP_PIXIEDUST_USERNAME_DN_ATTRIBUTE
-            user_dn, user_attrs = results[0]
-            if id_attr in user_attrs:
-                real_username = user_attrs[id_attr][0]
-                return super(EmailLoginBackend, self).authenticate(real_username, password)
-            else:
-                raise ValueError("LDAP User %r does not have username attribute %r" % (user_dn, id_attr))
+            for r in results:
+                user_dn, user_attrs = r
+                if id_attr in user_attrs:
+                    real_username = user_attrs[id_attr][0]
+                    user = super(EmailLoginBackend, self).authenticate(real_username, password)
+                    if user:
+                        authenticated_users.append(user)
+                else:
+                    raise ValueError("LDAP User %r does not have username attribute %r" % (user_dn, id_attr))
+
+            if len(authenticated_users) == 1:
+                return authenticated_users[0]
 
