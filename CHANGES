@@ -1,4 +1,4 @@
-1.0.2 (unreleased)
+1.0.2 (2012-01-31)
 ------------------
 
 - added a MANIFEST.in to fix the package process. naughty setuptools and it's magic svn inspection.
