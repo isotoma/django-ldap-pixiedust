@@ -74,6 +74,7 @@ class EmailLoginBackend(LDAPConnectionMixin, LDAPBackend):
         usual mechanism. """
 
         search = settings.ldap_settings.LDAP_PIXIEDUST_LOGIN_SEARCH
+        self._bind()
         results = search.execute(self._get_connection(), {"user": username})
 
         # Process all results and test if they authenticate. We are only expecting a single
